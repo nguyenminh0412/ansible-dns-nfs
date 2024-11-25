@@ -1,0 +1,35 @@
+---
+# tasks file for dns
+- name: Update system and install DNS
+  apt:
+    update_cache: yes
+    name: bind9
+    state: present
+- name: named
+  template:
+    src: ../templates/named.j2
+    dest: /etc/default/named
+- name: named.conf.options
+  template:
+    src: ../templates/named.conf.options.j2
+    dest: /etc/bind/named.conf.options
+- name: named.conf.local
+  template:
+    src: ../templates/named.conf.local.j2
+    dest: /etc/bind/named.conf.local
+- name: cp db.local to db.infra.example.com
+  command: cp /etc/bind/db.local /etc/bind/db.infra.example.com
+- name: cp db.127 to db.10.24
+  command: cp /etc/bind/db.127 /etc/bind/db.10.24
+- name: db.infra.example.com
+  template:
+    src: ../templates/db.infra.example.com.j2
+    dest: /etc/bind/db.infra.example.com
+- name: db.10.24
+  template:
+    src: ../templates/db.10.24.j2
+    dest: /etc/bind/db.10.24
+- name: restartd DNS
+  service:
+    name: bind9
+    state: restarted

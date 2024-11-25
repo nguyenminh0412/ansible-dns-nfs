@@ -1,0 +1,95 @@
+---
+# tasks file for nginx
+- name: Update system and install Nginx
+  apt:
+    update_cache: yes
+    name: nginx
+    state: present
+- name: Install NFS client
+  apt:
+    name: nfs-common
+    state: present
+- name: Create /var/www/html directory
+  file:
+    path: /var/www/html
+    state: directory
+    mode: '0755'
+- name: Mount NFS share to /var/www/html
+  mount:
+    src: "10.24.28.117:/server/nfs"
+    path: /var/www/html  
+    fstype: nfs
+    opts: defaults
+    state: mounted
+- name: Configure auto-mount on system reboot
+  lineinfile:
+    path: /etc/fstab
+    line: "10.24.28.117:/server/nfs /var/www/html nfs defaults 0 0"
+- name: Restart and enable Nginx
+  service:
+    name: nginx
+    state: restarted
+    enabled: yes
+- name: Create a directory to store certificates and keys
+  file:
+      path: /etc/nginx/ssl
+      state: directory
+      mode: '0755'
+
+- name: Generate a private key
+  openssl_privatekey:
+      path: /etc/nginx/ssl/nginx-selfsigned.key
+      size: 2048
+      state: present
+- name: Create a Certificate Signing Request (CSR)
+  openssl_csr:
+      path: /etc/nginx/ssl/nginx-selfsigned.csr
+      privatekey_path: /etc/nginx/ssl/nginx-selfsigned.key
+      common_name: infra.example.com
+- name: Generate a self-signed certificate
+  openssl_certificate:
+      path: /etc/nginx/ssl/nginx-selfsigned.crt
+      csr_path: /etc/nginx/ssl/nginx-selfsigned.csr
+      privatekey_path: /etc/nginx/ssl/nginx-selfsigned.key
+      provider: selfsigned
+- name: Backup the default Nginx configuration file
+  copy:
+      src: /etc/nginx/sites-available/default
+      dest: /etc/nginx/sites-available/default.bak
+      remote_src: yes
+- name: Configure Nginx to use SSL
+  blockinfile:
+      path: /etc/nginx/sites-available/default
+      block: |
+        server {
+            listen 80;
+            server_name infra.example.com;
+            return 301 https://$host$request_uri;
+        }
+
+        server {
+            listen 443 ssl;
+            server_name infra.example.com;
+
+            ssl_certificate /etc/nginx/ssl/nginx-selfsigned.crt;
+            ssl_certificate_key /etc/nginx/ssl/nginx-selfsigned.key;
+
+            root /var/www/html;
+            index index.html index.htm index.nginx-debian.html;
+
+            location / {
+                try_files $uri $uri/ =404;
+            }
+        }
+- name: Test Nginx configuration
+  command: nginx -t
+  register: nginx_test
+  ignore_errors: yes
+- name: Display the configuration test result
+  debug:
+      var: nginx_test.stdout
+- name: Restart Nginx if the configuration is valid
+  service:
+      name: nginx
+      state: restarted
+  when: nginx_test.rc == 0

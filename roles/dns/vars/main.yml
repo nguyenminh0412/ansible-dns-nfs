@@ -1,0 +1,12 @@
+---
+# vars file for dns
+domain_name: infra.example.com
+services:
+  - name: ns
+    ip: 10.24.28.116
+  - name: dns
+    ip: 10.24.28.116
+  - name: nfs
+    ip: 10.24.28.117
+  - name: nginx
+    ip: 10.24.28.118

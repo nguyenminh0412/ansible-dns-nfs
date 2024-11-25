@@ -1,0 +1,23 @@
+---
+# tasks file for nfs
+- name: Update system and install NFS Server
+  apt:
+    update_cache: yes
+    name: nfs-kernel-server
+    state: present
+- name: Create share
+  file:
+    path: /server/nfs
+    state: directory
+    mode: '0777'
+    owner: nobody
+    group: nogroup
+- name: exports
+  lineinfile:
+    path: /etc/exports
+    line: "/server/nfs *(rw,sync,no_subtree_check)"
+- name: restarted NFS
+  service:
+    name: nfs-kernel-server
+    state: restarted
+

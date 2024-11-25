@@ -1,0 +1,13 @@
+[local]
+local_server ansible_host=127.0.0.1 ansible_connection=local
+[web_servers]
+#server1 ansible_host=10.24.28.119 ansible_port=22 ansible_user=minh.ndt
+server1 ansible_host=10.24.28.119 ansible_user=minh.ndt
+#10.24.28.120 ansible_user=minh.ndt
+server2 ansible_host=10.24.28.120 ansible_user=minh.ndt
+[dns_servers]
+dns ansible_host=10.24.28.116 ansible_user=minh.ndt
+[nfs_server]
+nfs_server ansible_host=10.24.28.117 ansible_user=minh.ndt
+[nfs_client]
+nfs_client ansible_host=10.24.28.118 ansible_user=minh.ndt
